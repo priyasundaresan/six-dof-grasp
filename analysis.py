@@ -10,11 +10,11 @@ import numpy as np
 from mathutils import *
 from scipy.spatial.transform import Rotation as R
 
-def draw(img, source_px, imgpts):
+def draw(img, source_px, imgpts, intensity=255):
     imgpts = imgpts.astype(int)
-    img = cv2.line(img, source_px, tuple(imgpts[0].ravel()), (255,0,0), 5)
-    img = cv2.line(img, source_px, tuple(imgpts[1].ravel()), (0,255,0), 5)
-    img = cv2.line(img, source_px, tuple(imgpts[2].ravel()), (0,0,255), 5)
+    img = cv2.line(img, source_px, tuple(imgpts[0].ravel()), (intensity,0,0), 5)
+    img = cv2.line(img, source_px, tuple(imgpts[1].ravel()), (0,intensity,0), 5)
+    img = cv2.line(img, source_px, tuple(imgpts[2].ravel()), (0,0,intensity), 5)
     return img 
 
 def project_3d_point(transformation_matrix,p,render_size):
@@ -24,7 +24,20 @@ def project_3d_point(transformation_matrix,p,render_size):
     pixel = [int(p2[0] * render_size[0]), int(render_size[1] - p2[1]*render_size[1])]
     return pixel
 
-def run_inference(model, img, world_to_cam, output_dir='vis'):
+def proj_axes_from_trans_rot(trans, rot_euler, render_size):
+    axes = np.float32([[1,0,0],[0,1,0],[0,0,-1]])
+    rot_mat = R.from_euler('xyz', rot_euler).as_matrix()
+    axes = rot_mat@axes
+    axes += trans
+    axes_projected = []
+    for axis in axes:
+        axes_projected.append(project_3d_point(world_to_cam, Vector(axis), render_size))
+    axes_projected = np.array(axes_projected)
+    center_projected = project_3d_point(world_to_cam, Vector(trans), render_size)
+    center_projected = tuple(center_projected)
+    return center_projected, axes_projected
+
+def run_inference(model, img, gt_label, world_to_cam, output_dir='vis'):
     img_t = transform(img)
     img_t = img_t.cuda().unsqueeze(0)
     H,W,C = img.shape
@@ -32,35 +45,35 @@ def run_inference(model, img, world_to_cam, output_dir='vis'):
     pred = model(img_t).detach().cpu().numpy().squeeze()
     trans = pred[:3]
     rot_euler = pred[3:]
-    rot_mat = R.from_euler('xyz', rot_euler).as_matrix()
-    axes = np.float32([[1,0,0],[0,1,0],[0,0,-1]])
-    axes = rot_mat@axes
-    axes += trans
-    axes_projected = []
-    center_projected = project_3d_point(world_to_cam, Vector(trans), render_size)
-    for axis in axes:
-        axes_projected.append(project_3d_point(world_to_cam, Vector(axis), render_size))
-    axes_projected = np.array(axes_projected)
-    center_projected = tuple(center_projected)
+    trans_gt = gt_label[:3]
+    rot_euler_gt = gt_label[3:]
+    center_projected_pred, axes_projected_pred = proj_axes_from_trans_rot(trans, rot_euler, render_size)
+    center_projected_gt, axes_projected_gt = proj_axes_from_trans_rot(trans_gt, rot_euler_gt, render_size)
     vis = img.copy()
-    vis = draw(vis,center_projected,axes_projected)
+    vis = draw(vis,center_projected_pred,axes_projected_pred)
+    vis = draw(vis,center_projected_gt,axes_projected_gt, intensity=50)
     return vis
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="0"
     model = SixDOFNet()
-    model.load_state_dict(torch.load('/host/checkpoints/monkey/model_2_1_9.pth'))
+    model.load_state_dict(torch.load('/host/checkpoints/monkey/model_2_1_20.pth'))
     torch.cuda.set_device(0)
     model = model.cuda()
     dataset_dir = '/host/datasets/monkey_test'
     image_dir = os.path.join(dataset_dir, 'images')
-    world_to_cam = Matrix(np.load('%s/annots/cam_to_world.npy'%dataset_dir))
+    labels_dir = os.path.join(dataset_dir, 'annots')
+    world_to_cam = Matrix(np.load('%s/cam_to_world.npy'%(labels_dir)))
     output_dir = 'vis'
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     for idx, f in enumerate(sorted(os.listdir(image_dir))):
         img = cv2.imread(os.path.join(image_dir, f))
-        vis = run_inference(model, img, world_to_cam, output_dir)
+        gt_data = np.load(os.path.join(labels_dir, '%05d.npy'%idx), allow_pickle=True)
+        gt_trans = gt_data.item().get("trans")
+        gt_rot = gt_data.item().get("rot")
+        gt_label = np.hstack((gt_trans, gt_rot))
+        vis = run_inference(model, img, gt_label, world_to_cam, output_dir)
         print("Annotating %06d"%idx)
         annotated_filename = "%05d.jpg"%idx
         cv2.imwrite('%s/%s'%(output_dir, annotated_filename), vis)
