@@ -12,9 +12,9 @@ from scipy.spatial.transform import Rotation as R
 
 def draw(img, source_px, imgpts, intensity=255):
     imgpts = imgpts.astype(int)
-    img = cv2.line(img, source_px, tuple(imgpts[0].ravel()), (intensity,0,0), 5)
-    img = cv2.line(img, source_px, tuple(imgpts[1].ravel()), (0,intensity,0), 5)
-    img = cv2.line(img, source_px, tuple(imgpts[2].ravel()), (0,0,intensity), 5)
+    img = cv2.arrowedLine(img, source_px, tuple(imgpts[0].ravel()), (intensity,0,0), 2)
+    img = cv2.arrowedLine(img, source_px, tuple(imgpts[1].ravel()), (0,intensity,0), 2)
+    img = cv2.arrowedLine(img, source_px, tuple(imgpts[2].ravel()), (0,0,intensity), 2)
     return img 
 
 def project_3d_point(transformation_matrix,p,render_size):
@@ -25,7 +25,7 @@ def project_3d_point(transformation_matrix,p,render_size):
     return pixel
 
 def proj_axes_from_trans_rot(trans, rot_euler, render_size):
-    axes = np.float32([[1,0,0],[0,1,0],[0,0,-1]])
+    axes = np.float32([[1,0,0],[0,1,0],[0,0,-1]])*0.2
     rot_mat = R.from_euler('xyz', rot_euler).as_matrix()
     axes = rot_mat@axes
     axes += trans
@@ -43,24 +43,28 @@ def run_inference(model, img, gt_label, world_to_cam, output_dir='vis'):
     H,W,C = img.shape
     render_size = (W,H)
     pred = model(img_t).detach().cpu().numpy().squeeze()
-    trans = pred[:3]
-    rot_euler = pred[3:]
+    #trans = pred[:3]
+    #rot_euler = pred[3:]
+    rot_euler = pred
     trans_gt = gt_label[:3]
     rot_euler_gt = gt_label[3:]
-    center_projected_pred, axes_projected_pred = proj_axes_from_trans_rot(trans, rot_euler, render_size)
     center_projected_gt, axes_projected_gt = proj_axes_from_trans_rot(trans_gt, rot_euler_gt, render_size)
-    vis = img.copy()
-    vis = draw(vis,center_projected_pred,axes_projected_pred)
-    vis = draw(vis,center_projected_gt,axes_projected_gt, intensity=50)
-    return vis
+    center_projected_pred, axes_projected_pred = proj_axes_from_trans_rot(trans_gt, rot_euler, render_size)
+    vis_gt = draw(img.copy(),center_projected_gt,axes_projected_gt, intensity=100)
+    cv2.putText(vis_gt,"Ground Truth",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
+    vis_pred = draw(img.copy(),center_projected_pred,axes_projected_pred)
+    cv2.putText(vis_pred,"Pred",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
+    return np.hstack((vis_gt, vis_pred))
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="0"
     model = SixDOFNet()
-    model.load_state_dict(torch.load('/host/checkpoints/monkey/model_2_1_20.pth'))
+    #model.load_state_dict(torch.load('/host/checkpoints/cyl/model_2_1_17.pth'))
+    model.load_state_dict(torch.load('/host/checkpoints/cyl_bend/model_2_1_22.pth'))
     torch.cuda.set_device(0)
     model = model.cuda()
-    dataset_dir = '/host/datasets/monkey_test'
+    dataset_dir = '/host/datasets/cyl_bend_test'
+    #dataset_dir = '/host/datasets/cyl_test'
     image_dir = os.path.join(dataset_dir, 'images')
     labels_dir = os.path.join(dataset_dir, 'annots')
     world_to_cam = Matrix(np.load('%s/cam_to_world.npy'%(labels_dir)))
