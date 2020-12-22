@@ -15,11 +15,15 @@ l1_loss = nn.L1Loss
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
+def angle_loss(a,b):
+    return torch.mean(torch.abs(torch.atan2(torch.sin(a - b), torch.cos(a - b))))
+
 def forward(sample_batched, model):
     img, gt_labels = sample_batched
     img = Variable(img.cuda() if use_cuda else img)
     pred_labels = model.forward(img).double()
-    loss = l1_loss()(pred_labels, gt_labels)
+    #loss = l1_loss()(pred_labels, gt_labels)
+    loss = angle_loss(gt_labels, pred_labels)
     return loss
 
 def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
@@ -46,7 +50,7 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
 
 # dataset
 workers=0
-dataset_dir = 'cyl_bend'
+dataset_dir = 'cyl_dr_angle_loss'
 output_dir = 'checkpoints'
 save_dir = os.path.join(output_dir, dataset_dir)
 
@@ -55,9 +59,9 @@ if not os.path.exists(output_dir):
 if not os.path.exists(save_dir):
     os.mkdir(save_dir)
 
-train_dataset = PoseDataset('/host/datasets/cyl_bend_train', transform)
+train_dataset = PoseDataset('/host/datasets/cyl_dr_train', transform)
 train_data = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-test_dataset = PoseDataset('/host/datasets/cyl_bend_test', transform)
+test_dataset = PoseDataset('/host/datasets/cyl_dr_test', transform)
 test_data = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 
 use_cuda = torch.cuda.is_available()
