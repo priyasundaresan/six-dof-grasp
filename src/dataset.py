@@ -23,11 +23,14 @@ class PoseDataset(Dataset):
 			label = np.load(os.path.join(labels_folder, '%05d.npy'%i), allow_pickle=True)
 			trans = label.item().get("trans")
 			rot = label.item().get("rot")
-			pose = np.hstack((trans, rot))
+			#pose = np.hstack((trans, rot))
+			pose = rot
 			self.labels.append(torch.from_numpy(pose).cuda())
 
 	def __getitem__(self, index):  
-		img = self.transform(cv2.imread(self.imgs[index]))
+		img_np = cv2.imread(self.imgs[index])
+		img_np = cv2.resize(img_np, (200,200))
+		img = self.transform(img_np)
 		labels = self.labels[index]
 		return img, labels
     
@@ -35,6 +38,6 @@ class PoseDataset(Dataset):
 		return len(self.labels)
 
 if __name__ == '__main__':
-	dset = PoseDataset('/host/datasets/monkey_test', transform)
+	dset = PoseDataset('/host/datasets/cyl_dr_test', transform)
 	img, labels = dset[0]
 	print(img.shape, labels.shape)
