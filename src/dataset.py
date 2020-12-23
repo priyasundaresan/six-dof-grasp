@@ -18,13 +18,14 @@ class PoseDataset(Dataset):
 		self.labels = []
 		labels_folder = os.path.join(dataset_dir, 'annots')
 		img_folder = os.path.join(dataset_dir, 'images')
-		for i in range(len(os.listdir(img_folder))):
+		for i in range(len(os.listdir(img_folder))-1):
 			self.imgs.append(os.path.join(img_folder, '%05d.jpg'%i))
 			label = np.load(os.path.join(labels_folder, '%05d.npy'%i), allow_pickle=True)
 			trans = label.item().get("trans")
 			rot = label.item().get("rot")
 			#pose = np.hstack((trans, rot))
-			pose = rot
+			#pose = rot
+			pose = np.array([rot[2]])
 			self.labels.append(torch.from_numpy(pose).cuda())
 
 	def __getitem__(self, index):  

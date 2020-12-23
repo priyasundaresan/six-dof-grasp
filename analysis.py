@@ -44,7 +44,8 @@ def run_inference(model, img, world_to_cam, gt_rot=None, output_dir='vis'):
     render_size = (W,H)
     pred = model(img_t).detach().cpu().numpy().squeeze()
     trans = trans_gt = np.zeros(3)
-    rot_euler = pred
+    rot_euler = np.array([0,0,pred])
+    #rot_euler = pred
     center_projected_pred, axes_projected_pred = proj_axes_from_trans_rot(trans_gt, rot_euler, render_size)
     vis_pred = draw(img.copy(),center_projected_pred,axes_projected_pred)
     cv2.putText(vis_pred,"Pred",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
@@ -61,15 +62,16 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="0"
     model = SixDOFNet()
     #model.load_state_dict(torch.load('/host/checkpoints/cyl/model_2_1_17.pth'))
-    model.load_state_dict(torch.load('/host/checkpoints/cyl_dr/model_2_1_10.pth'))
+    model.load_state_dict(torch.load('/host/checkpoints/more_blur_1rot/model_2_1_29.pth'))
     torch.cuda.set_device(0)
     model = model.cuda()
-    dataset_dir = '/host/datasets/cyl_dr_test'
+    dataset_dir = '/host/datasets/more_blur/test'
     #dataset_dir = '/host/datasets/cyl_test'
     image_dir = os.path.join(dataset_dir, 'images')
     labels_dir = os.path.join(dataset_dir, 'annots')
     world_to_cam = Matrix(np.load('%s/cam_to_world.npy'%(labels_dir)))
     output_dir = 'vis'
+#    test_dir = '/host/datasets/more_blur/test/images'
     test_dir = '/host/datasets/crops'
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)

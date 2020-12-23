@@ -14,7 +14,8 @@ class SixDOFNet(nn.Module):
 		modules = list(self.resnet.children())[:-1]      # delete the last fc layer.
 		self.resnet = nn.Sequential(*modules)
 		#self.linear = nn.Linear(64512, out_features=3)
-		self.linear = nn.Linear(512, out_features=3)
+		#self.linear = nn.Linear(512, out_features=3)
+		self.linear = nn.Linear(512, out_features=1)
 	def forward(self, x):
 		features = self.resnet(x)
 		features = features.reshape(features.size(0), -1)
