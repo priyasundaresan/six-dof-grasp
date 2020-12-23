@@ -9,14 +9,15 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from config import *
 from src.model import SixDOFNet
-from src.dataset import PoseDataset, transform
+#from src.dataset import PoseDataset, transform
+from src.real_dataset import PoseDataset, transform
 MSE = torch.nn.MSELoss()
 l1_loss = nn.L1Loss
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 def angle_loss(a,b):
-    return torch.mean(torch.abs(torch.atan2(torch.sin(a - b), torch.cos(a - b))))
+    return torch.mean(torch.abs(torch.sin(a-b)))
 
 def forward(sample_batched, model):
     img, gt_labels = sample_batched
@@ -50,18 +51,18 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
 
 # dataset
 workers=0
-dataset_dir = 'cyl_dr_angle_loss'
+dataset_dir = 'real_data'
 output_dir = 'checkpoints'
-save_dir = os.path.join(output_dir, dataset_dir)
+save_dir = os.path.join(output_dir, dataset_dir+"_1rot")
 
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 if not os.path.exists(save_dir):
     os.mkdir(save_dir)
 
-train_dataset = PoseDataset('/host/datasets/cyl_dr_train', transform)
+train_dataset = PoseDataset('/host/datasets/'+dataset_dir+'/train', transform)
 train_data = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-test_dataset = PoseDataset('/host/datasets/cyl_dr_test', transform)
+test_dataset = PoseDataset('/host/datasets/'+dataset_dir+'/test', transform)
 test_data = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 
 use_cuda = torch.cuda.is_available()
