@@ -9,7 +9,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from config import *
 from src.model import SixDOFNet
-from src.dataset import PoseDataset, transform
+#from src.dataset import PoseDataset, transform
+from src.real_dataset import PoseDataset, transform
 MSE = torch.nn.MSELoss()
 l1_loss = nn.L1Loss
 
@@ -58,18 +59,28 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
 
 # dataset
 workers=0
+<<<<<<< HEAD
 dataset_dir = 'cyl_2cable_MSE_rad2deg'
+=======
+dataset_dir = 'real_data'
+>>>>>>> bc43ea1ab4431af8f7c97f15cae5d217da21e9cd
 output_dir = 'checkpoints'
-save_dir = os.path.join(output_dir, dataset_dir)
+save_dir = os.path.join(output_dir, dataset_dir+"_1rot")
 
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
 if not os.path.exists(save_dir):
     os.mkdir(save_dir)
 
+<<<<<<< HEAD
 train_dataset = PoseDataset('/host/datasets/cyl_twocable_train', transform)
 train_data = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 test_dataset = PoseDataset('/host/datasets/cyl_twocable_test', transform)
+=======
+train_dataset = PoseDataset('/host/datasets/'+dataset_dir+'/train', transform)
+train_data = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
+test_dataset = PoseDataset('/host/datasets/'+dataset_dir+'/test', transform)
+>>>>>>> bc43ea1ab4431af8f7c97f15cae5d217da21e9cd
 test_data = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 
 use_cuda = torch.cuda.is_available()
