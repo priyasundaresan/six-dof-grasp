@@ -61,33 +61,22 @@ def run_inference(model, img, world_to_cam, gt_rot=None, output_dir='vis'):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="0"
     model = SixDOFNet()
-    #model.load_state_dict(torch.load('/host/checkpoints/cyl/model_2_1_17.pth'))
-    model.load_state_dict(torch.load('/host/checkpoints/more_blur_1rot/model_2_1_29.pth'))
+    #model.load_state_dict(torch.load('/host/checkpoints/cyl_dr_angle_loss/model_2_1_14.pth'))
+    #model.load_state_dict(torch.load('/host/checkpoints/cyl_dr_moreaug_MSE_rad2deg/model_2_1_18.pth'))
+    model.load_state_dict(torch.load('/host/checkpoints/cyl_2cable_MSE_rad2deg/model_2_1_16.pth'))
     torch.cuda.set_device(0)
     model = model.cuda()
-    dataset_dir = '/host/datasets/more_blur/test'
-    #dataset_dir = '/host/datasets/cyl_test'
+    model.eval()
+    dataset_dir = '/host/datasets/cyl_dr_test'
     image_dir = os.path.join(dataset_dir, 'images')
     labels_dir = os.path.join(dataset_dir, 'annots')
     world_to_cam = Matrix(np.load('%s/cam_to_world.npy'%(labels_dir)))
     output_dir = 'vis'
-#    test_dir = '/host/datasets/more_blur/test/images'
     test_dir = '/host/datasets/crops'
+    test_dir = '/host/datasets/real_twocable_crops'
+    #test_dir = '/host/datasets/cyl_dr_test/images'
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-    #for idx, f in enumerate(sorted(os.listdir(image_dir))):
-    #    img = cv2.imread(os.path.join(image_dir, f))
-    #    img = cv2.resize(img, (200,200))
-    #    gt_data = np.load(os.path.join(labels_dir, '%05d.npy'%idx), allow_pickle=True)
-    #    gt_trans = gt_data.item().get("trans")
-    #    gt_rot = gt_data.item().get("rot")
-    #    gt_label = np.hstack((gt_trans, gt_rot))
-    #    vis = run_inference(model, img, gt_label, world_to_cam, output_dir)
-    #    print("Annotating %06d"%idx)
-    #    annotated_filename = "%05d.jpg"%idx
-    #    cv2.imwrite('%s/%s'%(output_dir, annotated_filename), vis)
-    #    if idx > 25:
-    #        break
     for idx, f in enumerate(sorted(os.listdir(test_dir))):
         img = cv2.imread(os.path.join(test_dir, f))
         print(os.path.join(test_dir, f))

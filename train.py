@@ -15,8 +15,14 @@ l1_loss = nn.L1Loss
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
+#def angle_loss(a,b):
+#    return torch.mean(torch.abs(torch.atan2(torch.sin(a - b), torch.cos(a - b))))
+
+#def angle_loss(a,b):
+#    return torch.mean(torch.abs(torch.sin(a-b)))
+
 def angle_loss(a,b):
-    return torch.mean(torch.abs(torch.atan2(torch.sin(a - b), torch.cos(a - b))))
+     return MSE(torch.rad2deg(a), torch.rad2deg(b))
 
 def forward(sample_batched, model):
     img, gt_labels = sample_batched
@@ -29,6 +35,7 @@ def forward(sample_batched, model):
 def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
     for epoch in range(epochs):
 
+        model.train()
         train_loss = 0.0
         for i_batch, sample_batched in enumerate(train_data):
             optimizer.zero_grad()
@@ -40,6 +47,7 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
             print('\r', end='')
         print('%d: train loss:'%epoch, train_loss / i_batch)
         
+        model.eval()
         test_loss = 0.0
         for i_batch, sample_batched in enumerate(test_data):
             loss = forward(sample_batched, model)
@@ -50,7 +58,7 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
 
 # dataset
 workers=0
-dataset_dir = 'cyl_dr_angle_loss'
+dataset_dir = 'cyl_2cable_MSE_rad2deg'
 output_dir = 'checkpoints'
 save_dir = os.path.join(output_dir, dataset_dir)
 
@@ -59,9 +67,9 @@ if not os.path.exists(output_dir):
 if not os.path.exists(save_dir):
     os.mkdir(save_dir)
 
-train_dataset = PoseDataset('/host/datasets/cyl_dr_train', transform)
+train_dataset = PoseDataset('/host/datasets/cyl_twocable_train', transform)
 train_data = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-test_dataset = PoseDataset('/host/datasets/cyl_dr_test', transform)
+test_dataset = PoseDataset('/host/datasets/cyl_twocable_test', transform)
 test_data = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
 
 use_cuda = torch.cuda.is_available()
