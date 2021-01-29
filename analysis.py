@@ -42,7 +42,16 @@ def run_inference(model, img, world_to_cam, gt_rot=None, output_dir='vis'):
     img_t = img_t.cuda().unsqueeze(0)
     H,W,C = img.shape
     render_size = (W,H)
-    pred = model(img_t).detach().cpu().numpy().squeeze()
+    heatmap, pred = model(img_t)
+    heatmap = heatmap.detach().cpu().numpy()
+    pred = pred.detach().cpu().numpy().squeeze()
+    heatmap = heatmap[0][0]
+    pred_y, pred_x = np.unravel_index(heatmap.argmax(), heatmap.shape)
+    heatmap = cv2.normalize(heatmap, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    heatmap = cv2.addWeighted(img, 0.65, heatmap, 0.35, 0)
+    heatmap = cv2.arrowedLine(heatmap, (100,100), (pred_x, pred_y), (0,0,0), 1)
+    cv2.putText(heatmap,"Pred Offset",(pred_x,pred_y-15),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,0),1)
     trans = trans_gt = np.zeros(3)
     rot_euler = np.array([0,0,pred])
     #rot_euler = pred
@@ -56,14 +65,13 @@ def run_inference(model, img, world_to_cam, gt_rot=None, output_dir='vis'):
         result = np.hstack((vis_gt, vis_pred))
     else:
         result = vis_pred
+    result = np.hstack((result, heatmap))
     return result
 
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="0"
     model = SixDOFNet()
-    #model.load_state_dict(torch.load('/host/checkpoints/cyl_dr_angle_loss/model_2_1_14.pth'))
-    #model.load_state_dict(torch.load('/host/checkpoints/cyl_dr_moreaug_MSE_rad2deg/model_2_1_18.pth'))
-    model.load_state_dict(torch.load('/host/checkpoints/cyl_2cable_MSE_rad2deg/model_2_1_16.pth'))
+    model.load_state_dict(torch.load('/host/checkpoints/cyl_white_kpt/model_2_1_39.pth'))
     torch.cuda.set_device(0)
     model = model.cuda()
     model.eval()
@@ -73,14 +81,15 @@ if __name__ == '__main__':
     world_to_cam = Matrix(np.load('%s/cam_to_world.npy'%(labels_dir)))
     output_dir = 'vis'
     test_dir = '/host/datasets/crops'
-    test_dir = '/host/datasets/real_twocable_crops'
+    #test_dir = '/host/datasets/cyl_white_kpt_train/images'
+    #test_dir = '/host/datasets/real_twocable_crops'
     #test_dir = '/host/datasets/cyl_dr_test/images'
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     for idx, f in enumerate(sorted(os.listdir(test_dir))):
-        img = cv2.imread(os.path.join(test_dir, f))
-        print(os.path.join(test_dir, f))
         try:
+            img = cv2.imread(os.path.join(test_dir, f))
+            print(os.path.join(test_dir, f))
             img = cv2.resize(img, (200,200))
             gt_trans = np.zeros(3)
             gt_rot = None
@@ -90,5 +99,3 @@ if __name__ == '__main__':
             cv2.imwrite('%s/%s'%(output_dir, annotated_filename), vis)
         except:
             pass
-        if idx > 200:
-            break
