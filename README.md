@@ -18,7 +18,8 @@
 * Clone [six-dof-rendering](https://github.com/priyasundaresan/six-dof-rendering), best done locally rather than on a remote host, since we use Blender rendering which has not been tested headless or with X11 forwarding/VirtualGL.
 * For `six-dof-rendering`, you need to install Blender (download instructions here https://github.com/priyasundaresan/blender-rope-sim#setup), and then the usage is as follows:
 * `blender -b -P render.py`
-* `python real_kp_augment.py`
+* This will yield two folders, `images` and `annots` at the same level as `render.py` which contains synthetic cable crops and the associated grasp label (offset and orientation)
+* Run `python real_kp_augment.py` to data augment using affine transformations and domain randomization
 * This produces a folder called `aug` containing `images` and `annots`
 ```
 |-- aug
@@ -39,8 +40,8 @@ priya-keypoints                      latest                          735686b1cd8
 ```
 root@afc66cb0930c:/host#
 ```
-* Note that `Ctrl + D` allows you to detach out of the container at any time
-* Make a folder called `datasets` at the same level as `src`, `docker`, `vis`
+* Note that `Ctrl + D` allows you to detach out of the container at any time and all development should happen while in the container
+* While in the container, make a folder called `datasets` at the same level as `src`, `docker`, `vis` (this will store all future datasets)
 * Copy your locally rendered dataset from above (Copy the locally rendered `dset_train` and `dset_test` to `datasets/`
 * The final structure should be as follows:
 ```
@@ -65,4 +66,5 @@ datasets/
 * Put your saved checkpoint in `analysis.py` and run `python analysis.py` which will produce visualizations on the real test crops here: https://github.com/priyasundaresan/six-dof-grasp/tree/kpt_rot/datasets/crops
 
 ### Contributing 
-* For any questions, contact [Priya Sundaresan](http://priya.sundaresan.us) at priya.sundaresan@berkeley.edu or [Jennifer Grannen](http://jenngrannen.com/) at jenngrannen@berkeley.edu
+* For any questions, contact [Priya Sundaresan](http://priya.sundaresan.us) at priya.sundaresan@berkeley.edu or [Jennifer Grannen](http://jenngrannen.com/) at jenngrannen@berkeley.edu, or alternatively feel free to file an issue report and we'll get back to you ASAP!
+* Happy rendering & grasping :) 
