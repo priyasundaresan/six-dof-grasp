@@ -1,7 +1,5 @@
-IMG_HEIGHT  = 480
-IMG_WIDTH   = 640
-epochs = 40
-batch_size = 4
-#kpt_loss_weight = 0.9985 # Works
+IMG_HEIGHT  = 136
+IMG_WIDTH   = 136
+epochs = 20
+batch_size = 8
 kpt_loss_weight = 0.9990 # Works better
-#kpt_loss_weight = 0.9995 # Works
