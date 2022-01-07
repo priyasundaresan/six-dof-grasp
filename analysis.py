@@ -81,9 +81,6 @@ if __name__ == '__main__':
     world_to_cam = Matrix(np.load('%s/cam_to_world.npy'%(labels_dir)))
     output_dir = 'vis'
     test_dir = '/host/datasets/crops'
-    #test_dir = '/host/datasets/cyl_white_kpt_train/images'
-    #test_dir = '/host/datasets/real_twocable_crops'
-    #test_dir = '/host/datasets/cyl_dr_test/images'
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     for idx, f in enumerate(sorted(os.listdir(test_dir))):
