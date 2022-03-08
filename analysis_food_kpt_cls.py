@@ -26,7 +26,8 @@ def run_inference(model, img, output_dir='vis'):
     pred_rot = pred[0]
     pred_cls = pred[1:]
 
-    mapping = {0: 'ISO', 1: 'WALL', 2: 'STACKED'}
+    #mapping = {0: 'ISO', 1: 'WALL', 2: 'STACKED'}
+    mapping = {0: 'TV', 1: 'VS', 2: 'TA'}
     pred_cls = np.argmax(softmax(pred_cls))
     
     heatmap = heatmap[0][0]
@@ -39,10 +40,11 @@ def run_inference(model, img, output_dir='vis'):
     pt = cmath.rect(20, np.pi/2-pred_rot)  
     x2 = int(pt.real)
     y2 = int(pt.imag)
-    rot_vis = cv2.line(img, (pred_x-x2,pred_y+y2), (pred_x+x2, pred_y-y2), (255,255,255), 2)
+    rot_vis = img.copy()
+    rot_vis = cv2.line(rot_vis, (pred_x-x2,pred_y+y2), (pred_x+x2, pred_y-y2), (255,255,255), 2)
     cv2.putText(heatmap,"Skewer Point",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
-    cv2.putText(rot_vis,"Skewer Angle",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
     cv2.putText(rot_vis,"Cls: %s"%(mapping[pred_cls]),(20,40),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
+    cv2.putText(rot_vis,"Skewer Angle",(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),1)
     cv2.circle(rot_vis, (pred_x,pred_y), 4, (255,255,255), -1)
     result = np.hstack((heatmap, rot_vis))
     return math.degrees(pred_rot), result
@@ -50,7 +52,9 @@ def run_inference(model, img, output_dir='vis'):
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"]="0"
     model = SixDOFNet()
-    model.load_state_dict(torch.load('/host/checkpoints/acquis_3kpt_cls/model_2_1_11.pth'))
+    #model.load_state_dict(torch.load('/host/checkpoints/acquis_3kpt_cls/model_2_1_11.pth'))
+    #model.load_state_dict(torch.load('/host/checkpoints/acquis_3kpt_cls/model_torch14.pth'))
+    model.load_state_dict(torch.load('/host/checkpoints/acquis_3kpt_softness/model_2_1_19.pth'))
     torch.cuda.set_device(0)
     model = model.cuda()
     model.eval()
@@ -58,16 +62,17 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
-    test_dir = '/host/datasets/acquis_3kpt_clean/test/images'
+    test_dir = 'test_images'
     for idx, f in enumerate(sorted(os.listdir(test_dir))):
         img = cv2.imread(os.path.join(test_dir, f))
+        img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
         angle, vis = run_inference(model, img, output_dir)
         print(idx, angle)
         #print("Annotating %06d"%idx)
         annotated_filename = "%05d.jpg"%idx
         cv2.imwrite('%s/%s'%(output_dir, annotated_filename), vis)
 
-    #dataset_dir = 'acquis_3kpt_cls'
+    #dataset_dir = 'acquis_3kpt_softness'
     #test_dataset = PoseDataset('/host/datasets/%s/test'%dataset_dir, transform)
     #for i in range(len(test_dataset)):
     #    img, img_np, gauss, labels, cls = test_dataset[i]

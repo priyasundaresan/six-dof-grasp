@@ -103,7 +103,7 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
 
 # dataset
 workers=0
-dataset_dir = 'acquis_3kpt_cls'
+dataset_dir = 'acquis_3kpt_softness'
 output_dir = 'checkpoints'
 save_dir = os.path.join(output_dir, dataset_dir)
 
