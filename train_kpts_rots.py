@@ -54,8 +54,8 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
             train_rot_loss += rot_loss.item()
             print('[%d, %5d] kpts loss: %.3f, rot loss: %.3f' % (epoch + 1, i_batch + 1, kpt_loss.item(), rot_loss.item()), end='')
             print('\r', end='')
-        print('train kpt loss:', (1/kpt_loss_weight)*train_kpt_loss/i_batch)
-        print('train rot loss:', np.sqrt((1/rot_loss_weight)*(train_rot_loss/i_batch)))
+        print('%d: train kpt loss:'%(epoch), (1/kpt_loss_weight)*train_kpt_loss/i_batch)
+        print('%d: train rot loss:'%(epoch), np.sqrt((1/rot_loss_weight)*(train_rot_loss/i_batch)))
         
         test_loss = 0.0
         test_kpt_loss = 0.0
@@ -65,15 +65,15 @@ def fit(train_data, test_data, model, epochs, checkpoint_path = ''):
             test_loss += kpt_loss.item() + rot_loss.item()
             test_kpt_loss += kpt_loss.item()
             test_rot_loss += rot_loss.item()
-        print('test kpt loss:', (1/kpt_loss_weight)*test_kpt_loss/i_batch)
-        print('test rot loss:', np.sqrt((1/rot_loss_weight)*test_rot_loss/i_batch))
+        print('%d: test kpt loss:'%(epoch), (1/kpt_loss_weight)*test_kpt_loss/i_batch)
+        print('%d: test rot loss:'%(epoch), np.sqrt((1/rot_loss_weight)*test_rot_loss/i_batch))
         torch.save(model.state_dict(), checkpoint_path + '/model_2_1_' + str(epoch) + '.pth')
 
 # dataset
 workers=0
-dataset_dir = 'acquis_rot_recenter'
+dataset_dir = 'acquis_rot_recenter_new'
 output_dir = 'checkpoints'
-save_dir = os.path.join(output_dir, dataset_dir, '_new')
+save_dir = os.path.join(output_dir, dataset_dir)
 
 if not os.path.exists(output_dir):
     os.mkdir(output_dir)
